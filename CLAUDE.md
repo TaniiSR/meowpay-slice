@@ -183,6 +183,15 @@ silence that; handle the new variant.
 - **Mobile domain/use-cases**: plain `flutter test` against a fake repository - no widget pump
   needed. If a new use case can't be tested this way without touching Flutter, it's probably not
   actually domain logic.
+- **Mobile data layer**: `MeowPayRemoteDataSource` gets a test per operation against
+  `package:http/testing.dart`'s `MockClient` - happy path decodes correctly, and each distinct
+  status/error-code branch in the failure-mapping table gets its own test asserting the resulting
+  `MeowPayFailure` *subtype*, not just "it throws." `MeowPayRepositoryImpl` gets a thin test per
+  method against a stub data source (not `MockClient` - no HTTP at that layer) asserting it
+  delegates and maps models to entities. This line exists because a sibling implementation of
+  this same spec shipped its entire data layer with zero tests - an untested HTTP-error mapping
+  is exactly the kind of thing that breaks silently (a wrong status-code branch just shows up as
+  "the UI displays the wrong error copy," never a crash).
 - **Mobile presentation**: `bloc_test`'s `blocTest()` for the Cubit (state-emission sequences);
   `testWidgets` + `BlocProvider.value` for the View, using the same fake repository.
 - Before committing: `./gradlew test` (backend), `flutter analyze && flutter test` (mobile),
