@@ -26,6 +26,13 @@ than folded into "the slice."
   (domain/data/presentation) + Cubit from the very first commit — see
   [Decisions and trade-offs](#decisions-and-trade-offs) for why that's a deliberate difference
   from the sibling repo's mobile app.
+- **`.claude/`** — the workflow contract this repo was built under, checked in alongside the
+  code rather than kept in a human's head: [`CLAUDE.md`](CLAUDE.md) (architecture/testability
+  rules and harness quirks), [`.claude/skills/run/`](.claude/skills/run/SKILL.md) (how to launch
+  each piece and confirm it's serving real traffic), [`.claude/skills/tdd/`](.claude/skills/tdd/SKILL.md)
+  (the red-green-refactor workflow per stack), and two agents,
+  [`tdd-planner`](.claude/agents/tdd-planner.md) and [`tdd-coder`](.claude/agents/tdd-coder.md) —
+  see [How I used AI](#how-i-used-ai) for how they were actually used, commit by commit.
 
 ## Running it from a clean clone
 
@@ -111,6 +118,31 @@ transitions, and a widget test of the full screen — no backend or emulator nee
 ```bash
 flutter analyze && flutter test
 ```
+
+## Running everything at once
+
+Every piece above is an independent process against the same shared backend, so there's no need
+to run them one at a time — start Postgres and the backend once, then bring up as many clients as
+you want in parallel, in any order:
+
+| Piece                    | Command (own terminal each)                                        | Serves on / reaches backend via |
+|---------------------------|--------------------------------------------------------------------|----------------------------------|
+| Postgres                  | `docker compose up -d`                                              | `localhost:5432`                |
+| Backend                   | `cd backend && ./gradlew bootRun`                                   | `localhost:8080`                |
+| Web                       | `cd web && npm run dev`                                             | `localhost:3000` → `localhost:8080` |
+| Mobile (iOS Simulator)    | `cd mobile && flutter run -d "iPhone 17 Pro"`                       | → `localhost:8080` (shares host network) |
+| Mobile (Android emulator) | `cd mobile && flutter run -d emulator-5554 --dart-define=API_BASE_URL=http://10.0.2.2:8080` | → `10.0.2.2:8080` |
+
+This is exactly how the mobile verification for this README was actually done: backend + web up
+in the background, then both the Android emulator and iOS Simulator built, installed, and driven
+through a live transfer concurrently against that one running backend — the same cats' balances
+updating and showing up in every client's transfer history, since they're all hitting the same
+Postgres row.
+
+**If you also have the sibling [`meowpay`](https://github.com/TaniiSR/meowpay) repo checked out**,
+its `docker-compose.yml` binds the same host port, `5432` — only one of the two repos' Postgres
+containers can be up at a time unless you remap one. `docker ps` will tell you which one is
+currently holding the port (`meowpay-db-1` vs `meowpay-slice-db-1`).
 
 ## API
 
