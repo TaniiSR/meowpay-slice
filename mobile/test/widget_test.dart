@@ -49,7 +49,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('fromCatDropdown')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Whiskers').last);
+    await tester.tap(find.text('Whiskers (100 treats)').last);
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('toCatDropdown')));
@@ -58,7 +58,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byKey(const Key('amountField')), '15');
-    await tester.tap(find.text('Send'));
+    await tester.tap(find.text('Send treats'));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Sent 15'), findsOneWidget);
@@ -71,7 +71,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('fromCatDropdown')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Whiskers').last);
+    await tester.tap(find.text('Whiskers (100 treats)').last);
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('toCatDropdown')));
@@ -80,7 +80,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byKey(const Key('amountField')), '15');
-    await tester.tap(find.text('Send'));
+    await tester.tap(find.text('Send treats'));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Sent 15'), findsOneWidget);
@@ -91,7 +91,7 @@ void main() {
     await tester.tap(find.text('Whiskers').last);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Send'));
+    await tester.tap(find.text('Send treats'));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Sent 15'), findsNothing);

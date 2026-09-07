@@ -12,24 +12,31 @@ class TransferHistoryList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (transfers.isEmpty) {
       return const Padding(
-        padding: EdgeInsets.all(16),
-        child: Text('No transfers yet.'),
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Text('No transfers yet.', style: TextStyle(color: Colors.grey)),
       );
     }
     final sorted = [...transfers]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final transfer in sorted)
-          ListTile(
-            title: Text(
-              '${catById(transfer.fromCatId)?.name ?? transfer.fromCatId} '
-              '→ ${catById(transfer.toCatId)?.name ?? transfer.toCatId}',
+      children: sorted.map((transfer) {
+        final fromName = catById(transfer.fromCatId)?.name ?? 'Unknown';
+        final toName = catById(transfer.toCatId)?.name ?? 'Unknown';
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          child: ListTile(
+            title: Text('$fromName → $toName'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('${transfer.amountTreats}'),
+                const SizedBox(width: 4),
+                const Icon(Icons.cookie, size: 16),
+              ],
             ),
-            subtitle: Text('${transfer.createdAt}'),
-            trailing: Text('${transfer.amountTreats}'),
+            subtitle: Text(transfer.createdAt.toLocal().toString()),
           ),
-      ],
+        );
+      }).toList(),
     );
   }
 }

@@ -10,12 +10,21 @@ class CatListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
-        title: Text(cat.name),
-        subtitle: Text('${cat.balanceTreats}'),
-        trailing: OutlinedButton(
-          onPressed: onTopUp,
-          child: const Text('Top up +20'),
+        title: Text(cat.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('${cat.balanceTreats}'),
+            const SizedBox(width: 4),
+            const Icon(Icons.cookie, size: 16),
+            const SizedBox(width: 12),
+            OutlinedButton(
+              onPressed: onTopUp,
+              child: const Text('Top up +20'),
+            ),
+          ],
         ),
       ),
     );
