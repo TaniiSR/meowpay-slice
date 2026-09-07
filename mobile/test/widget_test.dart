@@ -54,7 +54,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('toCatDropdown')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Mochi').last);
+    await tester.tap(find.text('Mochi (50 treats)').last);
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byKey(const Key('amountField')), '15');
@@ -76,7 +76,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('toCatDropdown')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Mochi').last);
+    await tester.tap(find.text('Mochi (50 treats)').last);
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byKey(const Key('amountField')), '15');
@@ -88,7 +88,7 @@ void main() {
     // Now change 'To' to Whiskers as well (self-transfer) and resubmit.
     await tester.tap(find.byKey(const Key('toCatDropdown')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Whiskers').last);
+    await tester.tap(find.text('Whiskers (85 treats)').last);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Send treats'));

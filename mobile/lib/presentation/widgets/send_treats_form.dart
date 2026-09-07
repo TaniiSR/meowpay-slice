@@ -73,7 +73,10 @@ class _SendTreatsFormState extends State<SendTreatsForm> {
               decoration: const InputDecoration(labelText: 'To'),
               items: [
                 for (final cat in widget.cats)
-                  DropdownMenuItem(value: cat.id, child: Text(cat.name)),
+                  DropdownMenuItem(
+                    value: cat.id,
+                    child: Text('${cat.name} (${cat.balanceTreats} treats)'),
+                  ),
               ],
               onChanged: (value) => setState(() => _toCatId = value),
             ),
