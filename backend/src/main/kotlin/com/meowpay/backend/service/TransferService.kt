@@ -46,4 +46,12 @@ class TransferService(
 
         return transferRepository.save(Transfer(fromCatId = fromCatId, toCatId = toCatId, amountTreats = amountTreats))
     }
+
+    @Transactional(readOnly = true)
+    fun history(catId: UUID?): List<Transfer> =
+        if (catId == null) {
+            transferRepository.findAllByOrderByCreatedAtDesc()
+        } else {
+            transferRepository.findAllByFromCatIdOrToCatIdOrderByCreatedAtDesc(catId, catId)
+        }
 }

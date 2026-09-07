@@ -1,5 +1,6 @@
 package com.meowpay.backend.service
 
+import com.meowpay.backend.domain.Cat
 import com.meowpay.backend.domain.Wallet
 import com.meowpay.backend.repository.CatRepository
 import com.meowpay.backend.repository.WalletRepository
@@ -21,5 +22,16 @@ class WalletService(
         val wallet = walletRepository.findByCatIdForUpdate(catId) ?: throw CatNotFoundException(catId)
         wallet.credit(amountTreats)
         return walletRepository.save(wallet)
+    }
+
+    @Transactional(readOnly = true)
+    fun listCats(): List<Pair<Cat, Wallet>> =
+        catRepository.findAll().map { cat -> cat to walletRepository.findByCatId(cat.id)!! }
+
+    @Transactional(readOnly = true)
+    fun getCat(catId: UUID): Pair<Cat, Wallet> {
+        val cat = catRepository.findById(catId).orElseThrow { CatNotFoundException(catId) }
+        val wallet = walletRepository.findByCatId(catId) ?: throw CatNotFoundException(catId)
+        return cat to wallet
     }
 }
