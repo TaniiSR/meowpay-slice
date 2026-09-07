@@ -2,6 +2,11 @@ import 'package:mobile/domain/entities/cat.dart';
 import 'package:mobile/domain/entities/meowpay_failure.dart';
 import 'package:mobile/domain/entities/treat_transfer.dart';
 import 'package:mobile/domain/repositories/meowpay_repository.dart';
+import 'package:mobile/domain/usecases/get_cats.dart';
+import 'package:mobile/domain/usecases/get_transfer_history.dart';
+import 'package:mobile/domain/usecases/send_treats.dart';
+import 'package:mobile/domain/usecases/top_up.dart';
+import 'package:mobile/presentation/cubit/meowpay_cubit.dart';
 
 class FakeMeowPayRepository implements MeowPayRepository {
   final Map<String, Cat> _cats;
@@ -58,3 +63,10 @@ class FakeMeowPayRepository implements MeowPayRepository {
     return transfer;
   }
 }
+
+MeowPayCubit buildTestCubit(FakeMeowPayRepository repo) => MeowPayCubit(
+      getCats: GetCats(repo),
+      getTransferHistory: GetTransferHistory(repo),
+      sendTreats: SendTreats(repo),
+      topUp: TopUp(repo),
+    );
