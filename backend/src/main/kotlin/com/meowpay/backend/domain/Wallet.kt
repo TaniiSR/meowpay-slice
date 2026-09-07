@@ -17,8 +17,19 @@ class Wallet(
     val catId: UUID,
 
     @Column(name = "balance_treats", nullable = false)
-    val balanceTreats: Long,
+    var balanceTreats: Long,
 
     @Version
     val version: Int = 0,
-)
+) {
+    fun credit(amount: Long) {
+        require(amount > 0)
+        balanceTreats += amount
+    }
+
+    fun debit(amount: Long) {
+        require(amount > 0)
+        check(balanceTreats >= amount)
+        balanceTreats -= amount
+    }
+}
