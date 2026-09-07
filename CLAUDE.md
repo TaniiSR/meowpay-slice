@@ -122,10 +122,13 @@ sibling project rather than re-discovered by trial and error:
 - **Spring Boot 4** (assume this is what gets scaffolded - it's the current default as of this
   writing): dependency starters are renamed (`spring-boot-starter-webmvc`, not `-web`;
   `spring-boot-starter-webmvc-test`); `TestRestTemplate` moved to
-  `org.springframework.boot.resttestclient` and needs the `spring-boot-restclient` dependency
-  **and** `@AutoConfigureTestRestTemplate` explicitly; Testcontainers 2.x module artifacts are
-  prefixed (`testcontainers-postgresql`, `testcontainers-junit-jupiter`), not the old unprefixed
-  names.
+  `org.springframework.boot.resttestclient` and needs **both** the `spring-boot-resttestclient`
+  dependency (the module `TestRestTemplate` itself lives in) **and** `spring-boot-restclient`
+  (`TestRestTemplate` needs `RestTemplateBuilder` from it) **and**
+  `@AutoConfigureTestRestTemplate` explicitly - confirmed by actually inspecting jar contents
+  when the single-dependency version threw `ClassNotFoundException`, not assumed; Testcontainers
+  2.x module artifacts are prefixed (`testcontainers-postgresql`, `testcontainers-junit-jupiter`),
+  not the old unprefixed names.
 
 If any of the above stops being true, don't assume it's still accurate - verify against the
 actual failure before trusting this file over what's actually observed.
