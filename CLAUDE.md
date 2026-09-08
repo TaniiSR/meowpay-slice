@@ -22,10 +22,10 @@ web/       Next.js (App Router, TS) frontend                    <- with web/, pe
 mobile/    Flutter (Android + iOS), Clean Architecture + Cubit   <- explicitly OUTSIDE "the slice"
 ```
 
-**`mobile/` is scope creep, on purpose, clearly labeled.** The brief asks for one thin slice and
-caps effort at roughly half a day; a third client on two more platforms doesn't make the transfer
-logic more correct. Don't let `mobile/`'s presence pull `backend/`/`web/` decisions toward "we
-need this to work on three platforms" - they only ever need to serve one web frontend.
+**`mobile/` is scope creep, on purpose, clearly labeled.** The brief asks for one thin slice; a
+third client on two more platforms doesn't make the transfer logic more correct. Don't let
+`mobile/`'s presence pull `backend/`/`web/` decisions toward "we need this to work on three
+platforms" - they only ever need to serve one web frontend.
 
 Unlike the sibling project, mobile state management here is **Cubit from the start**, not an
 MVVM `ChangeNotifier` ViewModel later swapped for Cubit. That swap was a genuine, worthwhile
