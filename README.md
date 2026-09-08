@@ -30,6 +30,8 @@ than folded into "the slice."
   (the red-green-refactor workflow per stack), and two agents,
   [`tdd-planner`](.claude/agents/tdd-planner.md) and [`tdd-coder`](.claude/agents/tdd-coder.md) —
   see [How I used AI](#how-i-used-ai) for how they were actually used, commit by commit.
+- **`Video demo`** — video demo here https://github.com/user-attachments/assets/ce74431f-132a-4bbf-896e-cda5ee407f4f
+
 
 ## Running it from a clean clone
 
