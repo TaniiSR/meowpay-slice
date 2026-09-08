@@ -1,12 +1,10 @@
 # MeowPay (slice) — send treats
 
 A thin, real, end-to-end slice of MeowPay: one cat sends treats to another. Kotlin/Spring Boot
-backend with real Postgres persistence, a Next.js frontend, and a Flutter mobile client — the
-same fictional product as the sibling [`meowpay`](https://github.com/TaniiSR/meowpay) repo, built
-a second time with a different constraint: **the workflow contract (`CLAUDE.md`, two agents, two
-skills) is the first thing committed, before a single line of app code**, so every commit that
-follows is made under it, not just the later ones. See [How I used AI](#how-i-used-ai) for why
-that distinction matters and how it actually played out.
+backend with real Postgres persistence, a Next.js frontend, and a Flutter mobile client. The
+workflow contract (`CLAUDE.md`, two agents, two skills) is the first thing committed, before a
+single line of app code, so every commit that follows is made under it. See
+[How I used AI](#how-i-used-ai) for how that loop actually worked, commit by commit.
 
 **The core submission is `backend/` + `web/`** — that's the single thin slice the exercise asks
 for. `mobile/` is extra, added afterward as a second client against the same backend; see
@@ -24,8 +22,7 @@ than folded into "the slice."
   topping up their cat's wallet, and a transfer history feed.
 - **`mobile/`** — Flutter client (Android + iOS) against the same REST API. Clean Architecture
   (domain/data/presentation) + Cubit from the very first commit — see
-  [Decisions and trade-offs](#decisions-and-trade-offs) for why that's a deliberate difference
-  from the sibling repo's mobile app.
+  [Decisions and trade-offs](#decisions-and-trade-offs) for why.
 - **`.claude/`** — the workflow contract this repo was built under, checked in alongside the
   code rather than kept in a human's head: [`CLAUDE.md`](CLAUDE.md) (architecture/testability
   rules and harness quirks), [`.claude/skills/run/`](.claude/skills/run/SKILL.md) (how to launch
@@ -84,9 +81,7 @@ This isn't needed with Docker Desktop.
 
 Needs the [Flutter SDK](https://docs.flutter.dev/get-started/install), the backend running
 (above), and either an Android emulator/device or the iOS Simulator (macOS + Xcode + CocoaPods).
-Bundle/application id is `com.meowpayslice.mobile` — deliberately different from the sibling
-`meowpay` repo's `com.meowpay.mobile` so both apps can be installed side by side on the same
-simulator/emulator without clobbering each other.
+Bundle/application id is `com.meowpayslice.mobile`.
 
 ```bash
 cd mobile
@@ -138,11 +133,6 @@ in the background, then both the Android emulator and iOS Simulator built, insta
 through a live transfer concurrently against that one running backend — the same cats' balances
 updating and showing up in every client's transfer history, since they're all hitting the same
 Postgres row.
-
-**If you also have the sibling [`meowpay`](https://github.com/TaniiSR/meowpay) repo checked out**,
-its `docker-compose.yml` binds the same host port, `5432` — only one of the two repos' Postgres
-containers can be up at a time unless you remap one. `docker ps` will tell you which one is
-currently holding the port (`meowpay-db-1` vs `meowpay-slice-db-1`).
 
 ## API
 
@@ -202,30 +192,22 @@ concurrency test actually catches real Postgres deadlocks, then reverted.
 - **The Flutter app is intentionally scoped outside "the slice."** A third client on two more
   platforms doesn't make the transfer logic any more correct — it's added surface area, kept
   separate from `backend/`/`web/` decisions on purpose (see `CLAUDE.md`).
-- **Cubit from the first mobile commit, not a later swap.** The sibling `meowpay` repo built its
-  mobile app with an MVVM `ChangeNotifier` ViewModel first, then swapped to Cubit as a genuine,
-  worthwhile architectural exploration. Repeating that swap here, on a second build of the same
-  app, would be manufactured rather than organic — the destination was already known. `MeowPayState`
-  is a sealed class from the start, and `MeowPayLoaded.copyWith` was designed with mutually
-  exclusive `formError`/`formSuccess` fields (with an `assert` invariant) from its first commit —
-  reproducing a real bug the sibling repo shipped and later had to fix, so it never had the chance
-  to exist here.
-- **The mobile data layer has its own testability rule, added before it was built.** While
-  planning the mobile work, `tdd-planner` found that the sibling repo's entire `data/` layer
-  (JSON mapping, HTTP error-to-failure mapping) shipped with zero tests — the kind of gap that
-  breaks silently as "the UI shows the wrong error copy," never a crash. `CLAUDE.md` was amended
-  with an explicit checklist entry for this layer (commit `fc0601c`) *before* `data/` was
-  implemented, and the actual implementation has a test per `MeowPayRemoteDataSource` operation
-  against `MockClient`, plus a test per distinct failure-mapping branch asserting the resulting
-  `MeowPayFailure` subtype.
+- **Cubit (BLoC) for the mobile presentation layer, from the first commit.** `MeowPayState` is a
+  sealed class from the start — adding a new state variant is a compile error everywhere it isn't
+  handled, since `HomeScreen`'s `switch` is exhaustive. `MeowPayLoaded.copyWith` was designed with
+  mutually exclusive `formError`/`formSuccess` fields (with an `assert` invariant), so an error and
+  a success message can never render at the same time.
+- **The mobile data layer has its own testability rule, added before it was built.** JSON mapping
+  and HTTP error-to-failure mapping are the kind of logic that can regress silently as "the UI
+  shows the wrong error copy" rather than as a crash, so `CLAUDE.md` carries an explicit checklist
+  entry for this layer (commit `fc0601c`) written *before* `data/` was implemented. The actual
+  implementation has a test per `MeowPayRemoteDataSource` operation against `MockClient`, plus a
+  test per distinct failure-mapping branch asserting the resulting `MeowPayFailure` subtype.
 
 ## How I used AI
 
-The sibling [`meowpay`](https://github.com/TaniiSR/meowpay) repo was built the usual way: app
-first, `CLAUDE.md`/skills/an agent added partway through once the need for them became obvious.
-That worked, but the first ~20 commits had no persistent context or enforced workflow behind
-them. This repo inverts the order for real — not backdated, just built in this sequence from a
-fresh `git init` — specifically to see what changes when the contract exists from commit zero:
+The workflow contract — `CLAUDE.md`, two agents, two skills — was committed first, before a
+single line of app code, in this sequence from a fresh `git init`:
 
 ```
 459fdc2  chore: init repo
@@ -255,8 +237,8 @@ Every non-trivial piece of this repo's application code — the backend's domain
 service, and API; the web UI; all three mobile layers — went through
 `tdd-planner` → `tdd-coder` → my own independent re-verification (re-running `flutter
 analyze`/`flutter test`, `./gradlew test`, or the live browser/device check, never just trusting
-the agent's self-report) → commit. Small, individually-buildable commits throughout, same as the
-sibling repo, but every one of them made under a workflow that existed before the code did.
+the agent's self-report) → commit. Small, individually-buildable commits throughout, every one of
+them made under a workflow that existed before the code did.
 
 **Concrete things this loop caught, not just process for its own sake:**
 
@@ -268,12 +250,12 @@ sibling repo, but every one of them made under a workflow that existed before th
 - `tdd-coder` found the backend had no CORS configuration at all while verifying the web UI live
   against the real backend — every browser fetch would have failed regardless of origin. Fixed
   and committed separately (`45b92d1`) from the UI commit itself, since it's a distinct concern.
-- Deliberately reproducing two historical bugs to prove the tests that guard against them
-  actually catch something: role-based (instead of fixed-order) wallet locking, which produced 17
-  real Postgres deadlocks in ~25s before being reverted to fixed-order locking (~0.8s, zero
-  deadlocks); and a naive, non-mutually-exclusive `MeowPayLoaded.copyWith`, confirmed to fail an
-  assertion (`formError` should be `null` after a success, wasn't) before being reverted to the
-  correct version.
+- The locking strategy and the `copyWith` invariant were both validated empirically, not just by
+  reading the code: role-based (instead of fixed-order) wallet locking was tried deliberately,
+  producing 17 real Postgres deadlocks in ~25s, before being reverted to fixed-order locking
+  (~0.8s, zero deadlocks); and a naive, non-mutually-exclusive `MeowPayLoaded.copyWith` was tried
+  and confirmed to fail an assertion (`formError` should be `null` after a success, wasn't) before
+  being reverted to the correct version.
 - `CLAUDE.md` itself was corrected mid-build, not just written once and left alone: the
   `TestRestTemplate` dependency note was wrong (needed **both**
   `spring-boot-resttestclient` and `spring-boot-restclient`, not one), caught by an actual
