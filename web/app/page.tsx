@@ -16,6 +16,7 @@ export default function Home() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
+  const [topUpPendingId, setTopUpPendingId] = useState<string | null>(null);
 
   const catsById = useMemo(() => new Map(cats.map((cat) => [cat.id, cat])), [cats]);
 
@@ -49,11 +50,14 @@ export default function Home() {
   async function handleTopUp(catId: string) {
     setFormError(null);
     setFormSuccess(null);
+    setTopUpPendingId(catId);
     try {
       await topUp(catId, 20);
       await refreshQuietly();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Top-up failed");
+    } finally {
+      setTopUpPendingId(null);
     }
   }
 
@@ -140,10 +144,11 @@ export default function Home() {
                 <span className="font-mono text-sm">{cat.balanceTreats} 🍪</span>
                 <button
                   onClick={() => handleTopUp(cat.id)}
-                  className="rounded-full border border-black/10 px-3 py-1 text-xs font-medium hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/10"
+                  disabled={topUpPendingId === cat.id}
+                  className="rounded-full border border-black/10 px-3 py-1 text-xs font-medium hover:bg-black/5 disabled:opacity-50 dark:border-white/20 dark:hover:bg-white/10"
                   title="Top up this cat's wallet by 20 treats"
                 >
-                  Top up +20
+                  {topUpPendingId === cat.id ? "Adding…" : "Top up +20"}
                 </button>
               </div>
             </li>

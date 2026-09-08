@@ -158,4 +158,27 @@ describe("Home", () => {
     await waitFor(() => expect(topUp).toHaveBeenCalledWith(whiskers.id, 20));
     await waitFor(() => expect(getCats).toHaveBeenCalledTimes(2));
   });
+
+  it("disables a cat's top-up button while its request is in flight", async () => {
+    mockLoaded();
+    let resolveTopUp: (cat: Cat) => void = () => {};
+    vi.mocked(topUp).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveTopUp = resolve;
+        }),
+    );
+    render(<Home />);
+    await screen.findByRole("list");
+
+    const [whiskersButton, mochiButton] = screen.getAllByRole("button", { name: /top up/i });
+    fireEvent.click(whiskersButton);
+
+    const pendingButton = await screen.findByRole("button", { name: /adding/i });
+    expect(pendingButton).toBeDisabled();
+    expect(mochiButton).not.toBeDisabled();
+
+    resolveTopUp({ ...whiskers, balanceTreats: 120 });
+    await waitFor(() => expect(screen.queryByRole("button", { name: /adding/i })).not.toBeInTheDocument());
+  });
 });
