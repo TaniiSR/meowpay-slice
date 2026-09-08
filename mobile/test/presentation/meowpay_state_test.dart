@@ -19,5 +19,14 @@ void main() {
       expect(cleared.formError, isNull);
       expect(cleared.formSuccess, isNull);
     });
+
+    test('sets and clears topUpInFlightCatId', () {
+      final inFlight =
+          const MeowPayLoaded(cats: [], transfers: []).copyWith(topUpInFlightCatId: 'w');
+      expect(inFlight.topUpInFlightCatId, 'w');
+
+      final cleared = inFlight.copyWith(clearTopUpInFlight: true);
+      expect(cleared.topUpInFlightCatId, isNull);
+    });
   });
 }

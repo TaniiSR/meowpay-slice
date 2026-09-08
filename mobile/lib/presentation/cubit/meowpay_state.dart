@@ -29,6 +29,7 @@ class MeowPayLoaded extends MeowPayState {
   final bool isSubmitting;
   final String? formError;
   final String? formSuccess;
+  final String? topUpInFlightCatId;
 
   const MeowPayLoaded({
     required this.cats,
@@ -36,6 +37,7 @@ class MeowPayLoaded extends MeowPayState {
     this.isSubmitting = false,
     this.formError,
     this.formSuccess,
+    this.topUpInFlightCatId,
   }) : assert(formError == null || formSuccess == null,
             'copyWith: formError and formSuccess must not both be set - call clearFormMessages instead');
 
@@ -53,6 +55,8 @@ class MeowPayLoaded extends MeowPayState {
     String? formError,
     String? formSuccess,
     bool clearFormMessages = false,
+    String? topUpInFlightCatId,
+    bool clearTopUpInFlight = false,
   }) =>
       MeowPayLoaded(
         cats: cats ?? this.cats,
@@ -62,8 +66,11 @@ class MeowPayLoaded extends MeowPayState {
             clearFormMessages ? null : (formError ?? (formSuccess != null ? null : this.formError)),
         formSuccess:
             clearFormMessages ? null : (formSuccess ?? (formError != null ? null : this.formSuccess)),
+        topUpInFlightCatId:
+            clearTopUpInFlight ? null : (topUpInFlightCatId ?? this.topUpInFlightCatId),
       );
 
   @override
-  List<Object?> get props => [cats, transfers, isSubmitting, formError, formSuccess];
+  List<Object?> get props =>
+      [cats, transfers, isSubmitting, formError, formSuccess, topUpInFlightCatId];
 }

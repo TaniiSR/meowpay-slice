@@ -79,6 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
           for (final cat in state.cats)
             CatListTile(
               cat: cat,
+              isTopUpInFlight: state.topUpInFlightCatId == cat.id,
               onTopUp: () => context.read<MeowPayCubit>().topUp(cat.id),
             ),
           const SizedBox(height: 24),

@@ -63,14 +63,14 @@ class MeowPayCubit extends Cubit<MeowPayState> {
   Future<void> topUp(String catId, {int amountTreats = 20}) async {
     final current = state;
     if (current is! MeowPayLoaded) return;
-    emit(current.copyWith(clearFormMessages: true));
+    emit(current.copyWith(clearFormMessages: true, topUpInFlightCatId: catId));
     try {
       await _topUp(catId: catId, amountTreats: amountTreats);
       emit(await _reload());
     } on MeowPayException catch (e) {
-      emit(current.copyWith(formError: e.failure.message));
+      emit(current.copyWith(clearTopUpInFlight: true, formError: e.failure.message));
     } catch (_) {
-      emit(current.copyWith(formError: 'Top-up failed'));
+      emit(current.copyWith(clearTopUpInFlight: true, formError: 'Top-up failed'));
     }
   }
 

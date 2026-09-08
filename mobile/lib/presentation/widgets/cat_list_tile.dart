@@ -4,8 +4,14 @@ import '../../domain/entities/cat.dart';
 class CatListTile extends StatelessWidget {
   final Cat cat;
   final VoidCallback onTopUp;
+  final bool isTopUpInFlight;
 
-  const CatListTile({super.key, required this.cat, required this.onTopUp});
+  const CatListTile({
+    super.key,
+    required this.cat,
+    required this.onTopUp,
+    this.isTopUpInFlight = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,8 +27,8 @@ class CatListTile extends StatelessWidget {
             const Icon(Icons.cookie, size: 16),
             const SizedBox(width: 12),
             OutlinedButton(
-              onPressed: onTopUp,
-              child: const Text('Top up +20'),
+              onPressed: isTopUpInFlight ? null : onTopUp,
+              child: Text(isTopUpInFlight ? 'Adding…' : 'Top up +20'),
             ),
           ],
         ),

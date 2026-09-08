@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/domain/entities/cat.dart';
 import 'package:mobile/presentation/cubit/meowpay_cubit.dart';
 import 'package:mobile/presentation/views/home_screen.dart';
+import 'package:mobile/presentation/widgets/cat_list_tile.dart';
 
 import 'support/fake_meowpay_repository.dart';
 
@@ -40,6 +41,17 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('120'), findsOneWidget);
+  });
+
+  testWidgets('CatListTile disables its top-up button while isTopUpInFlight is true', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: CatListTile(cat: _whiskers, isTopUpInFlight: true, onTopUp: () {}),
+    ));
+
+    expect(find.text('Adding…'), findsOneWidget);
+    expect(find.text('Top up +20'), findsNothing);
+    final button = tester.widget<OutlinedButton>(find.byType(OutlinedButton));
+    expect(button.onPressed, isNull);
   });
 
   testWidgets('submitting the send-treats form shows a success message', (tester) async {

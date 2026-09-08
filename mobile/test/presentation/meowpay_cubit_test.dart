@@ -167,6 +167,33 @@ void main() {
         expect(state.formError, isNotNull);
       },
     );
+
+    blocTest<MeowPayCubit, MeowPayState>(
+      'sets topUpInFlightCatId while in flight and clears it once done',
+      build: () => buildTestCubit(FakeMeowPayRepository([_whiskers, _mochi])),
+      act: (cubit) async {
+        await cubit.loadData();
+        await cubit.topUp('w');
+      },
+      skip: 2,
+      expect: () => [
+        isA<MeowPayLoaded>().having((s) => s.topUpInFlightCatId, 'topUpInFlightCatId', 'w'),
+        isA<MeowPayLoaded>().having((s) => s.topUpInFlightCatId, 'topUpInFlightCatId', isNull),
+      ],
+    );
+
+    blocTest<MeowPayCubit, MeowPayState>(
+      'clears topUpInFlightCatId even when the top-up fails',
+      build: () => buildTestCubit(FakeMeowPayRepository([_whiskers, _mochi])),
+      act: (cubit) async {
+        await cubit.loadData();
+        await cubit.topUp('nope');
+      },
+      verify: (cubit) {
+        final state = cubit.state as MeowPayLoaded;
+        expect(state.topUpInFlightCatId, isNull);
+      },
+    );
   });
 
   group('MeowPayCubit guards against acting before load', () {
