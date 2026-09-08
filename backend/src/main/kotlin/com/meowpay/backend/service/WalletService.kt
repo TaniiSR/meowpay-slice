@@ -18,8 +18,14 @@ class WalletService(
         if (amountTreats <= 0) {
             throw InvalidTransferException("Amount must be positive")
         }
+        if (amountTreats > Wallet.MAX_TREATS) {
+            throw InvalidTransferException("Amount must not exceed ${Wallet.MAX_TREATS} treats")
+        }
         catRepository.findById(catId).orElseThrow { CatNotFoundException(catId) }
         val wallet = walletRepository.findByCatIdForUpdate(catId) ?: throw CatNotFoundException(catId)
+        if (wallet.balanceTreats > Wallet.MAX_TREATS - amountTreats) {
+            throw InvalidTransferException("Balance would exceed ${Wallet.MAX_TREATS} treats")
+        }
         wallet.credit(amountTreats)
         return walletRepository.save(wallet)
     }

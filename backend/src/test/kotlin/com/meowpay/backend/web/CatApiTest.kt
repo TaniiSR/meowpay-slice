@@ -97,4 +97,18 @@ class CatApiTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
         assertEquals("VALIDATION_ERROR", response.body!!.error)
     }
+
+    @Test
+    fun `rejects a topup amount exceeding the maximum allowed treats`() {
+        val catId = newCatWithBalance("Topper", 10)
+
+        val response = restTemplate.postForEntity(
+            "/api/cats/$catId/topup",
+            TopUpRequest(Long.MAX_VALUE),
+            ErrorResponse::class.java,
+        )
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertEquals("VALIDATION_ERROR", response.body!!.error)
+    }
 }

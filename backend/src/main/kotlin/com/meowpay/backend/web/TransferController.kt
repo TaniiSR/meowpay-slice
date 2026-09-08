@@ -1,9 +1,12 @@
 package com.meowpay.backend.web
 
+import com.meowpay.backend.service.InvalidTransferException
 import com.meowpay.backend.service.TransferService
 import com.meowpay.backend.web.dto.CreateTransferRequest
 import com.meowpay.backend.web.dto.TransferDto
 import jakarta.validation.Valid
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -26,6 +29,23 @@ class TransferController(private val transferService: TransferService) {
     }
 
     @GetMapping
-    fun history(@RequestParam(required = false) catId: UUID?): List<TransferDto> =
-        transferService.history(catId).map { TransferDto(it.id, it.fromCatId, it.toCatId, it.amountTreats, it.createdAt) }
+    fun history(
+        @RequestParam(required = false) catId: UUID?,
+        @RequestParam(required = false) page: Int?,
+        @RequestParam(required = false) size: Int?,
+    ): ResponseEntity<List<TransferDto>> {
+        if (page == null && size == null) {
+            val dtos = transferService.history(catId)
+                .map { TransferDto(it.id, it.fromCatId, it.toCatId, it.amountTreats, it.createdAt) }
+            return ResponseEntity.ok(dtos)
+        }
+
+        if (page == null || page < 0 || size == null || size <= 0) {
+            throw InvalidTransferException("page must be >= 0 and size must be > 0")
+        }
+
+        val result = transferService.historyPage(catId, PageRequest.of(page, size, Sort.by("createdAt").descending()))
+        val dtos = result.content.map { TransferDto(it.id, it.fromCatId, it.toCatId, it.amountTreats, it.createdAt) }
+        return ResponseEntity.ok().header("X-Total-Count", result.totalElements.toString()).body(dtos)
+    }
 }

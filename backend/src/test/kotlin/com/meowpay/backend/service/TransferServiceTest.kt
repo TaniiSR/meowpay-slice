@@ -11,7 +11,10 @@ import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import java.util.UUID
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -90,6 +93,18 @@ class TransferServiceTest {
     }
 
     @Test
+    fun `rejects a transfer that would push the recipient's balance past the maximum allowed treats`() {
+        val sender = newCatWithBalance("Sender", Wallet.MAX_TREATS)
+        val recipient = newCatWithBalance("Recipient", 1)
+
+        assertThrows<InvalidTransferException> {
+            transferService.transfer(sender, recipient, Wallet.MAX_TREATS)
+        }
+        assertEquals(Wallet.MAX_TREATS, walletRepository.findByCatId(sender)!!.balanceTreats)
+        assertEquals(1L, walletRepository.findByCatId(recipient)!!.balanceTreats)
+    }
+
+    @Test
     fun `rejects a transfer from an unknown cat`() {
         val unknown = UUID.randomUUID()
         val recipient = newCatWithBalance("Recipient", 10)
@@ -112,24 +127,41 @@ class TransferServiceTest {
     }
 
     @Test
+    fun `historyPage returns only the requested page`() {
+        val sender = newCatWithBalance("Sender", 1000)
+        val recipient = newCatWithBalance("Recipient", 0)
+        repeat(5) { transferService.transfer(sender, recipient, 1) }
+
+        val page = transferService.historyPage(catId = sender, pageable = PageRequest.of(0, 2, Sort.by("createdAt").descending()))
+
+        assertEquals(5L, page.totalElements)
+        assertEquals(2, page.content.size)
+    }
+
+    @Test
     fun `concurrent opposing transfers between the same two cats never lose treats`() {
         val catA = newCatWithBalance("A", 100)
         val catB = newCatWithBalance("B", 100)
 
         val executor = Executors.newFixedThreadPool(4)
         val latch = CountDownLatch(40)
+        val failures = ConcurrentLinkedQueue<Throwable>()
 
         repeat(20) {
             executor.submit {
                 try {
-                    runCatching { transferService.transfer(catA, catB, 1) }
+                    transferService.transfer(catA, catB, 1)
+                } catch (t: Throwable) {
+                    failures.add(t)
                 } finally {
                     latch.countDown()
                 }
             }
             executor.submit {
                 try {
-                    runCatching { transferService.transfer(catB, catA, 1) }
+                    transferService.transfer(catB, catA, 1)
+                } catch (t: Throwable) {
+                    failures.add(t)
                 } finally {
                     latch.countDown()
                 }
@@ -140,6 +172,7 @@ class TransferServiceTest {
         executor.shutdown()
 
         assertTrue(completed, "transfers did not complete in time (possible deadlock)")
+        assertTrue(failures.isEmpty(), "expected no failures, got: $failures")
         val total = walletRepository.findByCatId(catA)!!.balanceTreats +
             walletRepository.findByCatId(catB)!!.balanceTreats
         assertEquals(200L, total)

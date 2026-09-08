@@ -4,7 +4,6 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import jakarta.persistence.Version
 import java.util.UUID
 
 @Entity
@@ -18,12 +17,15 @@ class Wallet(
 
     @Column(name = "balance_treats", nullable = false)
     var balanceTreats: Long,
-
-    @Version
-    val version: Int = 0,
 ) {
+    companion object {
+        const val MAX_TREATS = 1_000_000_000_000L
+    }
+
     fun credit(amount: Long) {
         require(amount > 0)
+        require(amount <= MAX_TREATS) { "Amount must not exceed $MAX_TREATS treats" }
+        require(balanceTreats <= MAX_TREATS - amount) { "Balance would exceed $MAX_TREATS treats" }
         balanceTreats += amount
     }
 

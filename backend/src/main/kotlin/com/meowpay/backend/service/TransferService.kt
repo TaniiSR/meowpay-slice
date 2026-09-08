@@ -1,9 +1,12 @@
 package com.meowpay.backend.service
 
 import com.meowpay.backend.domain.Transfer
+import com.meowpay.backend.domain.Wallet
 import com.meowpay.backend.repository.CatRepository
 import com.meowpay.backend.repository.TransferRepository
 import com.meowpay.backend.repository.WalletRepository
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -22,6 +25,9 @@ class TransferService(
         if (amountTreats <= 0) {
             throw InvalidTransferException("Amount must be positive")
         }
+        if (amountTreats > Wallet.MAX_TREATS) {
+            throw InvalidTransferException("Amount must not exceed ${Wallet.MAX_TREATS} treats")
+        }
 
         val fromCat = catRepository.findById(fromCatId).orElseThrow { CatNotFoundException(fromCatId) }
         if (!catRepository.existsById(toCatId)) {
@@ -38,6 +44,9 @@ class TransferService(
         if (fromWallet.balanceTreats < amountTreats) {
             throw InsufficientTreatsException(fromCat.id, fromCat.name)
         }
+        if (toWallet.balanceTreats > Wallet.MAX_TREATS - amountTreats) {
+            throw InvalidTransferException("Recipient's balance would exceed ${Wallet.MAX_TREATS} treats")
+        }
 
         fromWallet.debit(amountTreats)
         toWallet.credit(amountTreats)
@@ -53,5 +62,13 @@ class TransferService(
             transferRepository.findAllByOrderByCreatedAtDesc()
         } else {
             transferRepository.findAllByFromCatIdOrToCatIdOrderByCreatedAtDesc(catId, catId)
+        }
+
+    @Transactional(readOnly = true)
+    fun historyPage(catId: UUID?, pageable: Pageable): Page<Transfer> =
+        if (catId == null) {
+            transferRepository.findAllByOrderByCreatedAtDesc(pageable)
+        } else {
+            transferRepository.findAllByFromCatIdOrToCatIdOrderByCreatedAtDesc(catId, catId, pageable)
         }
 }

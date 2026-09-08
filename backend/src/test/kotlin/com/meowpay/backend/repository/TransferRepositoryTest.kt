@@ -11,6 +11,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase
 import org.springframework.context.annotation.Import
 import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.data.domain.PageRequest
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
@@ -68,5 +69,22 @@ class TransferRepositoryTest {
         assertThrows<DataIntegrityViolationException> {
             transferRepository.saveAndFlush(transfer)
         }
+    }
+
+    @Test
+    fun `paginates transfers ordered newest first`() {
+        val fromCat = catRepository.save(Cat(name = "From Cat"))
+        val toCat = catRepository.save(Cat(name = "To Cat"))
+        walletRepository.save(Wallet(catId = fromCat.id, balanceTreats = 1000))
+        walletRepository.save(Wallet(catId = toCat.id, balanceTreats = 0))
+        val saved = (1..5).map {
+            transferRepository.save(Transfer(fromCatId = fromCat.id, toCatId = toCat.id, amountTreats = it.toLong()))
+        }
+
+        val page = transferRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(0, 2))
+
+        assertEquals(5L, page.totalElements)
+        assertEquals(2, page.content.size)
+        assertEquals(saved.last().id, page.content.first().id)
     }
 }

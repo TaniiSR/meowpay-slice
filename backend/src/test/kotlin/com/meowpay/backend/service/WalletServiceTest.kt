@@ -11,10 +11,12 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
 import java.util.UUID
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @SpringBootTest
 @Import(TestcontainersConfig::class)
@@ -58,6 +60,16 @@ class WalletServiceTest {
     }
 
     @Test
+    fun `rejects a top-up that would exceed the maximum allowed balance`() {
+        val cat = newCatWithBalance("Topper", 100)
+
+        assertThrows<InvalidTransferException> {
+            walletService.topUp(cat, Wallet.MAX_TREATS)
+        }
+        assertEquals(100L, walletRepository.findByCatId(cat)!!.balanceTreats)
+    }
+
+    @Test
     fun `rejects a top-up for an unknown cat`() {
         val unknown = UUID.randomUUID()
 
@@ -73,11 +85,14 @@ class WalletServiceTest {
 
         val executor = Executors.newFixedThreadPool(4)
         val latch = CountDownLatch(50)
+        val failures = ConcurrentLinkedQueue<Throwable>()
 
         repeat(50) {
             executor.submit {
                 try {
-                    runCatching { walletService.topUp(cat, 1) }
+                    walletService.topUp(cat, 1)
+                } catch (t: Throwable) {
+                    failures.add(t)
                 } finally {
                     latch.countDown()
                 }
@@ -88,6 +103,7 @@ class WalletServiceTest {
         executor.shutdown()
 
         assertEquals(true, completed)
+        assertTrue(failures.isEmpty(), "expected no failures, got: $failures")
         assertEquals(50L, walletRepository.findByCatId(cat)!!.balanceTreats)
     }
 }

@@ -16,7 +16,11 @@ import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRe
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment
 import org.springframework.context.annotation.Import
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -125,5 +129,67 @@ class TransferApiTest {
         assertEquals(sender, match.fromCatId)
         assertEquals(recipient, match.toCatId)
         assertEquals(10L, match.amountTreats)
+    }
+
+    @Test
+    fun `400s with the API's error shape for malformed JSON`() {
+        val entity = HttpEntity(
+            "{not valid json",
+            HttpHeaders().apply { contentType = MediaType.APPLICATION_JSON },
+        )
+
+        val response = restTemplate.exchange("/api/transfers", HttpMethod.POST, entity, ErrorResponse::class.java)
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertEquals("MALFORMED_REQUEST", response.body!!.error)
+    }
+
+    @Test
+    fun `400s when the amount exceeds the maximum allowed treats`() {
+        val sender = newCatWithBalance("Sender", 100)
+        val recipient = newCatWithBalance("Recipient", 50)
+
+        val response = restTemplate.postForEntity(
+            "/api/transfers",
+            CreateTransferRequest(sender, recipient, Long.MAX_VALUE),
+            ErrorResponse::class.java,
+        )
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertEquals("VALIDATION_ERROR", response.body!!.error)
+    }
+
+    @Test
+    fun `400s when a transfer would push the recipient's balance past the maximum allowed treats`() {
+        val sender = newCatWithBalance("Sender", com.meowpay.backend.domain.Wallet.MAX_TREATS)
+        val recipient = newCatWithBalance("Recipient", 1)
+
+        val response = restTemplate.postForEntity(
+            "/api/transfers",
+            CreateTransferRequest(sender, recipient, com.meowpay.backend.domain.Wallet.MAX_TREATS),
+            ErrorResponse::class.java,
+        )
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertEquals("INVALID_TRANSFER", response.body!!.error)
+        assertEquals(com.meowpay.backend.domain.Wallet.MAX_TREATS, walletRepository.findByCatId(sender)!!.balanceTreats)
+        assertEquals(1L, walletRepository.findByCatId(recipient)!!.balanceTreats)
+    }
+
+    @Test
+    fun `paginates history when page and size are both provided`() {
+        val sender = newCatWithBalance("Sender", 1000)
+        val recipient = newCatWithBalance("Recipient", 0)
+        repeat(5) {
+            transferRepository.save(
+                com.meowpay.backend.domain.Transfer(fromCatId = sender, toCatId = recipient, amountTreats = 1),
+            )
+        }
+
+        val response = restTemplate.getForEntity("/api/transfers?catId=$sender&page=0&size=2", Array<TransferDto>::class.java)
+
+        assertEquals(HttpStatus.OK, response.statusCode)
+        assertEquals(2, response.body!!.size)
+        assertEquals("5", response.headers.getFirst("X-Total-Count"))
     }
 }
