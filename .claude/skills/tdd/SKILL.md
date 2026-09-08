@@ -55,13 +55,24 @@ flutter test                                     # confirm green, nothing else b
 **Mobile Cubit (state management)** - use `bloc_test`'s `blocTest()` to assert the exact sequence
 of emitted states *before* writing the Cubit method that produces them.
 
-**Web (Next.js)** - **no test runner is wired up** (just `next dev`/`build`/`lint`). TDD in the
-literal red-green sense isn't possible here yet. Until that changes, the closest equivalent is:
-`npm run build` (type errors) + `npx eslint .` (lint) + an actual manual check in the Browser pane
-before considering a web change done - don't skip the manual check just because the other two are
-green. If a web change is complex enough that you want real TDD for it, say so explicitly rather
-than silently treating lint-clean as "tested" - adding a test runner is a real decision (which
-one, config, CI impact) that shouldn't happen implicitly as a side effect of one feature.
+**Web (Next.js)** - Vitest + React Testing Library + `happy-dom` are wired up
+(`web/vitest.config.mts`), mocking `@/lib/api` to test component logic (validation, message
+state, send-then-refresh) without a real backend - see `web/app/page.test.tsx`. Red-green applies
+the same as any other stack:
+
+```bash
+cd web
+npx vitest run   # confirm red
+# implement
+npx vitest run   # confirm green, nothing else broke
+```
+
+Still run `npm run build` (type errors) + `npx eslint .` (lint) + an actual manual check in the
+Browser pane before considering a web change done - the test suite covers component logic, not
+visual regressions or real-backend integration, so the manual check isn't optional just because
+the suite is green. (`jsdom` was tried as the test environment first and hit an ESM/CJS
+`ERR_REQUIRE_ESM` crash from one of its transitive CSS dependencies when required from this
+project's CommonJS `package.json` - `happy-dom` doesn't have that failure mode, hence the choice.)
 
 ## If the full-suite run turns something red
 

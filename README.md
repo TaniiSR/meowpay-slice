@@ -167,6 +167,16 @@ exercise the row-locking. That locking strategy was validated empirically, not j
 code: it was deliberately broken (role-based instead of fixed-order locking) to confirm the
 concurrency test actually catches real Postgres deadlocks, then reverted.
 
+```bash
+cd web
+npx vitest run
+```
+
+The web tests mock `@/lib/api` (no real backend needed) and cover the frontend's actual logic:
+form validation (missing sender/recipient, self-transfer, non-positive amount), the digit-only
+amount field, a successful send clearing the form and refreshing both lists, an error clearing a
+prior success message, and the top-up button's refresh.
+
 ## Decisions and trade-offs
 
 - **Real persistence, real locking.** Balances are stored on a `wallets` table (not derived by

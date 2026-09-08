@@ -44,7 +44,7 @@ architecture rules.
 - **`.claude/skills/run/`** - how to launch each piece and *verify* it's serving real traffic,
   not just that a command exited 0.
 - **`.claude/skills/tdd/`** - the red-green-refactor workflow for this codebase, per stack,
-  including the honest caveat that `web/` has no test runner so literal TDD isn't possible there.
+  including `web/`'s Vitest + React Testing Library setup.
 - **`.claude/agents/tdd-planner.md`** - read-only (`Read`/`Grep`/`Glob`/`Bash`, no `Edit`/`Write`).
   Reads the above plus this file's architecture/testability sections and whatever code already
   exists near the change, then returns a concrete test-first plan: which layers change, the
@@ -70,7 +70,7 @@ touched - not just the new test for the new behavior:
 ```bash
 ./gradlew test                              # backend - all of it, not just --tests "*YourThing*"
 flutter analyze && flutter test              # mobile - all of it
-npm run build && npx eslint .                # web - closest equivalent given no test runner
+npm run build && npx eslint . && npx vitest run   # web - build, lint, and the test suite
 ```
 
 If something that passed before your change now fails or behaves differently, that's a
@@ -194,8 +194,11 @@ silence that; handle the new variant.
   "the UI displays the wrong error copy," never a crash).
 - **Mobile presentation**: `bloc_test`'s `blocTest()` for the Cubit (state-emission sequences);
   `testWidgets` + `BlocProvider.value` for the View, using the same fake repository.
+- **Web**: Vitest + React Testing Library, mocking `@/lib/api` (`web/app/page.test.tsx`) - covers
+  validation, form/message state, and send-then-refresh behavior without a real backend.
 - Before committing: `./gradlew test` (backend), `flutter analyze && flutter test` (mobile),
-  `npm run build && npx eslint .` (web). All three are meant to be clean, not just "mostly passing."
+  `npm run build && npx eslint . && npx vitest run` (web). All three are meant to be clean, not
+  just "mostly passing."
 
 ## Scalability notes (why certain things should be structured the way they are)
 
