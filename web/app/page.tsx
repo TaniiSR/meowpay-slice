@@ -200,11 +200,11 @@ export default function Home() {
             </label>
             <input
               id="amount"
-              type="number"
-              min={1}
-              step={1}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
               className="rounded-md border border-black/10 bg-transparent px-3 py-2 dark:border-white/20"
               placeholder="e.g. 10"
             />
